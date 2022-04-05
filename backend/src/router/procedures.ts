@@ -248,6 +248,45 @@ export const procedureHandlers: ProcedureHandlers = {
     };
   },
 
+  transaction: async ([transactionHash]) => {
+    const isTransactionIndexed = await transactions.getIsTransactionIndexed(
+      transactionHash
+    );
+    if (!isTransactionIndexed) {
+      return null;
+    }
+    const transactionBaseInfo = await transactions.getTransactionInfo(
+      transactionHash
+    );
+    if (!transactionBaseInfo) {
+      throw new Error(`No hash ${transactionHash} found`);
+    }
+    const transactionInfo = await sendJsonRpc("EXPERIMENTAL_tx_status", [
+      transactionBaseInfo.hash,
+      transactionBaseInfo.signerId,
+    ]);
+    console.log(
+      "==== transactionBaseInfo: ======",
+      transactionBaseInfo,
+      "====== transactionInfo: =======",
+      transactionInfo
+    );
+
+    return {
+      hash: transactionBaseInfo.hash,
+      created: {
+        timestamp: transactionBaseInfo.blockTimestamp,
+        blockHash: transactionBaseInfo.blockHash,
+      },
+      transactionIndex: transactionBaseInfo.transactionIndex,
+      receipts: transactionInfo.receipts,
+      receiptsOutcome: transactionInfo.receipts_outcome,
+      status: Object.keys(transactionInfo.status)[0],
+      transaction: transactionInfo.transaction,
+      transactionOutcome: transactionInfo.transaction_outcome,
+    };
+  },
+
   "is-account-indexed": async ([accountId]) => {
     return await accounts.isAccountIndexed(accountId);
   },
