@@ -20,8 +20,6 @@ type TransactionMessageRenderers = {
 };
 
 export const Args: React.FC<{ args: string }> = React.memo(({ args }) => {
-  console.log("args", args);
-
   const { t } = useTranslation();
   const decodedArgs = Buffer.from(args, "base64");
   let prettyArgs: string;
