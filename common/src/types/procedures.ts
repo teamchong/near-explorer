@@ -371,6 +371,10 @@ export type ProcedureTypes = {
     args: [string | number];
     result: string | null;
   };
+  "block-height-by-hash": {
+    args: [string];
+    result: number | null;
+  };
 
   "nearcore-final-block": {
     args: [];
