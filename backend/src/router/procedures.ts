@@ -265,6 +265,24 @@ export const procedureHandlers: ProcedureHandlers = {
       transactionBaseInfo.hash,
       transactionBaseInfo.signerId,
     ]);
+    const blockHashes = transactionInfo.receipts_outcome.map(
+      (receipt) => receipt.block_hash
+    );
+    const blockHeights = await blocks.getBlockHeightsByHashes(blockHashes);
+    const includedInBlockMap = blockHeights.reduce((acc, block) => {
+      acc.set(block.block_hash, block.block_height);
+      return acc;
+    }, new Map());
+    const receiptsOutcome = transactionInfo.receipts_outcome.map((receipt) => ({
+      id: receipt.id,
+      proof: receipt.proof,
+      outcome: receipt.outcome,
+      includedInBlock: {
+        hash: receipt.block_hash,
+        height: includedInBlockMap.get(receipt.block_hash),
+      },
+    }));
+
     return {
       hash: transactionBaseInfo.hash,
       created: {
@@ -273,7 +291,7 @@ export const procedureHandlers: ProcedureHandlers = {
       },
       transactionIndex: transactionBaseInfo.transactionIndex,
       receipts: transactionInfo.receipts,
-      receiptsOutcome: transactionInfo.receipts_outcome,
+      receiptsOutcome,
       status: Object.keys(transactionInfo.status)[0],
       transaction: transactionInfo.transaction,
       transactionOutcome: transactionInfo.transaction_outcome,
@@ -364,9 +382,6 @@ export const procedureHandlers: ProcedureHandlers = {
   },
   "block-by-hash-or-id": async ([blockId]) => {
     return await blocks.getBlockByHashOrId(blockId);
-  },
-  "block-height-by-hash": async ([blockHash]) => {
-    return await blocks.getBlockHeightByHash(blockHash);
   },
 
   // contracts
