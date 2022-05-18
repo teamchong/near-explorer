@@ -261,11 +261,54 @@ export type TransactionBaseInfo = {
   actions: Action[];
 };
 
+export type TransactionDetails = {
+  hash: string;
+  created: {
+    timestamp: number;
+    blockHash: string;
+  };
+  transaction: RPC.SignedTransactionView;
+  transactionIndex: number;
+  transactionFee: string;
+  transactionOutcome: TransactionOutcome;
+  status: KeysOfUnion<RPC.FinalExecutionStatus>;
+  gasUsed: string;
+  gasAttached: string;
+  receipts: TransactionReceipt[];
+  refundReceipts: RefundReceipt[];
+};
+
+export type TransactionBlockInfo = {
+  hash: string;
+  height: number;
+};
+
 export type TransactionOutcome = {
   id: string;
   outcome: RPC.ExecutionOutcomeView;
   block_hash: string;
 };
+
+export type ReceiptsOutcome = Omit<
+  RPC.ExecutionOutcomeWithIdView,
+  "block_hash"
+> & { includedInBlock: TransactionBlockInfo };
+
+export type TransactionReceipt = {
+  actions: Action[];
+  deposit: string | null;
+  signerId: string;
+  parentReceiptHash: string | null;
+  includedInBlock: TransactionBlockInfo;
+  receiptId: string;
+  receiverId: string;
+  gasBurnt?: number;
+  tokensBurnt: string;
+  logs: string[] | [];
+  status: RPC.ExecutionStatusView;
+};
+
+export type RefundReceipt = TransactionReceipt & { refund: string };
 
 type ReceiptExecutionOutcome = {
   tokens_burnt: string;
@@ -335,8 +378,8 @@ export type ProcedureTypes = {
     result: Account | null;
   };
   transaction: {
-    args: [TransactionHash];
-    result: any | null;
+    args: [string];
+    result: TransactionDetails | null;
   };
   "account-info": {
     args: [string];

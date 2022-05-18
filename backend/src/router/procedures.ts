@@ -255,47 +255,7 @@ export const procedureHandlers: ProcedureHandlers = {
     if (!isTransactionIndexed) {
       return null;
     }
-    const transactionBaseInfo = await transactions.getTransactionInfo(
-      transactionHash
-    );
-    if (!transactionBaseInfo) {
-      throw new Error(`No hash ${transactionHash} found`);
-    }
-    const transactionInfo = await sendJsonRpc("EXPERIMENTAL_tx_status", [
-      transactionBaseInfo.hash,
-      transactionBaseInfo.signerId,
-    ]);
-    const blockHashes = transactionInfo.receipts_outcome.map(
-      (receipt) => receipt.block_hash
-    );
-    const blockHeights = await blocks.getBlockHeightsByHashes(blockHashes);
-    const includedInBlockMap = blockHeights.reduce((acc, block) => {
-      acc.set(block.block_hash, block.block_height);
-      return acc;
-    }, new Map());
-    const receiptsOutcome = transactionInfo.receipts_outcome.map((receipt) => ({
-      id: receipt.id,
-      proof: receipt.proof,
-      outcome: receipt.outcome,
-      includedInBlock: {
-        hash: receipt.block_hash,
-        height: includedInBlockMap.get(receipt.block_hash),
-      },
-    }));
-
-    return {
-      hash: transactionBaseInfo.hash,
-      created: {
-        timestamp: transactionBaseInfo.blockTimestamp,
-        blockHash: transactionBaseInfo.blockHash,
-      },
-      transactionIndex: transactionBaseInfo.transactionIndex,
-      receipts: transactionInfo.receipts,
-      receiptsOutcome,
-      status: Object.keys(transactionInfo.status)[0],
-      transaction: transactionInfo.transaction,
-      transactionOutcome: transactionInfo.transaction_outcome,
-    };
+    return await transactions.getTransactionDetails(transactionHash);
   },
 
   "is-account-indexed": async ([accountId]) => {
