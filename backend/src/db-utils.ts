@@ -13,7 +13,6 @@ import {
 } from "kysely/dist/cjs/parser/reference-parser";
 import geoip from "geoip-lite";
 
-import { databaseConfigs } from "../config/database";
 import { HOUR } from "./consts";
 import { config } from "./config";
 import {
@@ -23,9 +22,9 @@ import {
 } from "./types";
 import { millisecondsToNanoseconds } from "./utils";
 
-import * as Indexer from "../config/models/readOnlyIndexerDatabase";
-import * as Telemetry from "../config/models/readOnlyTelemetryDatabase";
-import * as Analytics from "../config/models/readOnlyAnalyticsDatabase";
+import * as Indexer from "./models/readOnlyIndexer";
+import * as Telemetry from "./models/readOnlyTelemetry";
+import * as Analytics from "./models/readOnlyAnalytics";
 import { ExtractColumnType } from "kysely/dist/cjs/util/type-utils";
 
 const getPgPool = (config: PostgresDialectConfig): Pool => {
@@ -46,22 +45,20 @@ const getKysely = <T>(config: PostgresDialectConfig): Kysely<T> =>
     dialect: new PostgresDialect(getPgPool(config)),
   });
 
-const telemetryWriteDatabase = databaseConfigs.writeOnlyTelemetryDatabase.host
-  ? getKysely<Telemetry.ModelTypeMap>(
-      databaseConfigs.writeOnlyTelemetryDatabase
-    )
+const telemetryWriteDatabase = config.db.writeOnlyTelemetry.host
+  ? getKysely<Telemetry.ModelTypeMap>(config.db.writeOnlyTelemetry)
   : null;
 
 const telemetryDatabase = getKysely<Telemetry.ModelTypeMap>(
-  databaseConfigs.readOnlyTelemetryDatabase
+  config.db.readOnlyTelemetry
 );
 
 const indexerDatabase = getKysely<Indexer.ModelTypeMap>(
-  databaseConfigs.readOnlyIndexerDatabase
+  config.db.readOnlyIndexer
 );
 
 const analyticsDatabase = getKysely<Analytics.ModelTypeMap>(
-  databaseConfigs.readOnlyAnalyticsDatabase
+  config.db.readOnlyAnalytics
 );
 
 const ONE_DAY_TIMESTAMP_MILISEC = 24 * HOUR;

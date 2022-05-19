@@ -14,7 +14,8 @@
     "start:testnet": "dotenv -c -e ../testnet.env -- npm run start",
     "start:mainnet": "dotenv -c -e ../mainnet.env -- npm run start",
     "start:guildnet": "dotenv -c -e ../guildnet.env -- npm run start",
-    "db:generate-types": "dotenv -c -e ../mainnet.env -- ts-node kanel.ts"
+    "db:generate-types": "dotenv -c -e ../mainnet.env -- ts-node kanel.ts",
+    "db:format-types": "prettier --write 'src/models/**/*.ts'"
   },
   "repository": {
     "type": "git",
@@ -46,6 +47,7 @@
     "@types/lodash": "^4.14.182",
     "@types/pg": "^8.6.4",
     "kanel": "^2.4.4",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "prettier": "^2.6.2"
   }
 }

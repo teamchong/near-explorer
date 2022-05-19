@@ -51,6 +51,35 @@ export const config = merge(
       host: "localhost",
       secret: "THIS_IS_LOCALHOST_SECRET",
     },
+
+    db: {
+      readOnlyIndexer: {
+        host: "",
+        database: "",
+        user: "",
+        password: "",
+      },
+      readOnlyAnalytics: {
+        host: "",
+        database: "",
+        user: "",
+        password: "",
+      },
+      readOnlyTelemetry: {
+        host: "",
+        database: "",
+        user: "",
+        password: "",
+      },
+      writeOnlyTelemetry: {
+        host: "",
+        database: "",
+        user: "",
+        password: "",
+        min: 0,
+        max: 15,
+      },
+    },
   },
   getOverrides("NEAR_EXPLORER_CONFIG")
 );

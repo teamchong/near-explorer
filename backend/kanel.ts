@@ -2,19 +2,19 @@ import { processDatabase } from "kanel";
 import path from "path";
 // @ts-ignore
 import { recase } from "@kristiandupont/recase";
-import { databaseConfigs } from "./config/database";
+import { config } from "./src/config";
 
 const run = async () => {
-  for (const [database, config] of Object.entries(databaseConfigs)) {
+  for (const [database, dbConfig] of Object.entries(config.db)) {
     // The model is the same as readOnlyTelemetryDatabase
     // And we probably don't have credentials to connect to it
-    if (database === "writeOnlyTelemetryDatabase") {
+    if (database === "writeOnlyTelemetry") {
       continue;
     }
     console.log(`\n> Generating types for ${database}...`);
     try {
       await processDatabase({
-        connection: config,
+        connection: dbConfig,
         preDeleteModelFolder: true,
         customTypeMap: {
           bytea: "Buffer",
@@ -27,7 +27,7 @@ const run = async () => {
           {
             name: "public",
             ignore: ["__diesel_schema_migrations"],
-            modelFolder: path.join(__dirname, "config/models", database),
+            modelFolder: path.join(__dirname, "src/models", database),
           },
         ],
       });
