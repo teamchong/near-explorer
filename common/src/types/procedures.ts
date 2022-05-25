@@ -32,6 +32,105 @@ export type Account = {
   transactionsQuantity: number;
 };
 
+export type AccountActivityCursor = {
+  blockTimestamp: string;
+  shardId: number;
+  indexInChunk: number;
+};
+
+export type AccountTransferAction = {
+  type: "transfer";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountRefundAction = {
+  type: "refund";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountValidatorRewardAction = {
+  type: "validator-reward";
+  blockHash: string;
+};
+
+export type AccountContractDeployedAction = {
+  type: "contract-deployed";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountAccessKeyCreatedAction = {
+  type: "access-key-created";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountAccessKeyRemovedAction = {
+  type: "access-key-removed";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountCallMethodAction = {
+  type: "call-method";
+  methodName: string;
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountRestakeAction = {
+  type: "restake";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountAccountCreatedAction = {
+  type: "account-created";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountAccountRemovedAction = {
+  type: "account-removed";
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountBatchAction = {
+  type: "batch";
+  actions: AccountActivityAction[];
+  transactionHash: string;
+  receiptId?: string;
+};
+
+export type AccountActivityAction =
+  | AccountTransferAction
+  | AccountRefundAction
+  | AccountValidatorRewardAction
+  | AccountContractDeployedAction
+  | AccountAccessKeyCreatedAction
+  | AccountAccessKeyRemovedAction
+  | AccountCallMethodAction
+  | AccountRestakeAction
+  | AccountAccountCreatedAction
+  | AccountAccountRemovedAction
+  | AccountBatchAction;
+
+export type AccountActivityElement = {
+  involvedAccountId: string | null;
+  cursor: {
+    blockTimestamp: string;
+    shardId: number;
+    indexInChunk: number;
+  };
+  timestamp: number;
+  direction: "inbound" | "outbound";
+  deltaAmount: string;
+  action: AccountActivityAction;
+};
+
 export type AccountTransactionsCount = {
   inTransactionsCount: number;
   outTransactionsCount: number;
@@ -238,6 +337,10 @@ export type ProcedureTypes = {
   "account-info": {
     args: [string];
     result: AccountOld | null;
+  };
+  "account-activity": {
+    args: [string, number, AccountActivityCursor | null];
+    result: AccountActivityElement[];
   };
   "account-transactions-count": {
     args: [string];

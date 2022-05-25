@@ -39,7 +39,7 @@ const LoadButton = styled("button", {
 
 export type StaticConfig<T, I> = {
   key: ReactQuery.QueryKey;
-  Component: React.FC<{ items: T[] }>;
+  Component: React.FC<{ items: T[]; loading: boolean; error: unknown }>;
   paginationIndexer: ReactQuery.GetNextPageParamFunction<T[]>;
   hasUpdateButton?: boolean;
   fetch: (fetcher: Fetcher, indexer: I | undefined) => Promise<T[]>;
@@ -78,6 +78,8 @@ const Wrapper = <T, I>(config: StaticConfig<T, I>): React.FC => {
       isFetching,
       isFetchingNextPage,
       refetch,
+      isLoading,
+      error,
     } = ReactQuery.useInfiniteQuery(
       key,
       ({
@@ -120,7 +122,11 @@ const Wrapper = <T, I>(config: StaticConfig<T, I>): React.FC => {
           }
           style={{ overflowX: "hidden" }}
         >
-          <config.Component items={allItems} />
+          <config.Component
+            items={allItems}
+            loading={isLoading}
+            error={error}
+          />
         </InfiniteScroll>
       </>
     );

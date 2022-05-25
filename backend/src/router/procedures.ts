@@ -16,6 +16,7 @@ import * as nearApi from "../utils/near";
 import { GlobalState } from "../global-state";
 import { formatDate } from "../utils/formatting";
 import { config } from "../config";
+import { nanosecondsToMilliseconds } from "../utils/bigint";
 
 const promisifiedExec = promisify(exec);
 
@@ -271,6 +272,42 @@ export const procedureHandlers: ProcedureHandlers = {
       ...accountInfo,
       details: accountDetails,
     };
+  },
+
+  "account-activity": async ([accountId, limit, cursor]) => {
+    const changes = await accounts.getAccountChanges(
+      accountId,
+      limit,
+      cursor || undefined
+    );
+
+    const idsToFetch = accounts.getIdsFromAccountChanges(changes);
+    const [
+      receiptsMapping,
+      transactionsMapping,
+      blocksMapping,
+    ] = await Promise.all([
+      receipts.getReceiptsByIds(idsToFetch.receiptIds),
+      transactions.getTransactionsByHashes(idsToFetch.transactionHashes),
+      blocks.getBlockHeightsByTimestamps(idsToFetch.blocksTimestamps),
+    ]);
+    return changes.map((change) => ({
+      timestamp: nanosecondsToMilliseconds(BigInt(change.blockTimestamp)),
+      involvedAccountId: change.involvedAccountId,
+      direction: change.direction === "INBOUND" ? "inbound" : "outbound",
+      deltaAmount: change.deltaNonStakedAmount,
+      action: accounts.getAccountActivityAction(
+        change,
+        receiptsMapping,
+        transactionsMapping,
+        blocksMapping
+      ),
+      cursor: {
+        blockTimestamp: change.blockTimestamp,
+        shardId: change.shardId,
+        indexInChunk: change.indexInChunk,
+      },
+    }));
   },
 
   // blocks

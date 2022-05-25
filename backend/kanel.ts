@@ -8,7 +8,10 @@ const run = async () => {
   for (const [database, config] of Object.entries(databaseConfigs)) {
     // The model is the same as readOnlyTelemetryDatabase
     // And we probably don't have credentials to connect to it
-    if (database === "writeOnlyTelemetryDatabase") {
+    if (
+      database === "writeOnlyTelemetryDatabase" ||
+      database === "readOnlyIndexerDatabaseBeta"
+    ) {
       continue;
     }
     console.log(`\n> Generating types for ${database}...`);

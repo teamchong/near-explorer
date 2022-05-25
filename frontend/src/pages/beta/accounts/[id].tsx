@@ -57,7 +57,7 @@ const AccountQueryView: React.FC<QueryProps> = React.memo((props) => {
         return (
           <>
             <AccountHeader account={props.data} />
-            <AccountTabs />
+            <AccountTabs account={props.data} />
           </>
         );
       }
