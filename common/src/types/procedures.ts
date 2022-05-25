@@ -274,7 +274,7 @@ export type TransactionDetails = {
   status: KeysOfUnion<RPC.FinalExecutionStatus>;
   gasUsed: string;
   gasAttached: string;
-  receipts: TransactionReceipt[];
+  receipt: TransactionReceipt;
   refundReceipts: RefundReceipt[];
 };
 
@@ -288,6 +288,69 @@ export type TransactionOutcome = {
   outcome: RPC.ExecutionOutcomeView;
   block_hash: string;
 };
+
+export type TransactionTransferAction = {
+  type: "transfer";
+  amount: string;
+};
+
+// export type TransactionRefundAction = {
+//   type: "refund";
+//   amount: string;
+// };
+
+// export type TransactionValidatorRewardAction = {
+//   type: "validator-reward";
+//   amount: string;
+//   blockHash: BlockHash;
+// };
+
+export type TransactionContractDeployedAction = {
+  type: "contract-deployed";
+};
+
+export type TransactionAccessKeyCreatedAction = {
+  type: "access-key-created";
+};
+
+export type TransactionAccessKeyRemovedAction = {
+  type: "access-key-removed";
+};
+
+export type TransactionCallMethodAction = {
+  type: "call-method";
+  methodName: string;
+};
+
+export type TransactionRestakeAction = {
+  type: "restake";
+};
+
+export type TransactionAccountCreatedAction = {
+  type: "account-created";
+};
+
+export type TransactionAccountRemovedAction = {
+  type: "account-removed";
+};
+
+export type TransactionBatchAction = {
+  type: "batch";
+  actions: TransactionActivityAction[];
+};
+
+export type TransactionActivityAction =
+  | TransactionTransferAction
+  // | TransactionRefundAction
+  // | TransactionValidatorRewardAction
+  | TransactionContractDeployedAction
+  | TransactionAccessKeyCreatedAction
+  | TransactionAccessKeyRemovedAction
+  | TransactionCallMethodAction
+  | TransactionRestakeAction
+  | TransactionAccountCreatedAction
+  | TransactionAccountRemovedAction
+  | TransactionBatchAction;
 
 export type ReceiptsOutcome = Omit<
   RPC.ExecutionOutcomeWithIdView,
@@ -306,6 +369,7 @@ export type TransactionReceipt = {
   tokensBurnt: string;
   logs: string[] | [];
   status: RPC.ExecutionStatusView;
+  outgoingReceipts: TransactionReceipt[] | [];
 };
 
 export type RefundReceipt = TransactionReceipt & { refund: string };
