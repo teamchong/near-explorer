@@ -4,7 +4,7 @@ import {
   queryBlockInfo,
   queryBlockByHashOrId,
   queryBlocksHashes,
-  queryBlockHeightsByHashes
+  queryBlockHeightsByHashes,
 } from "../database/queries";
 
 export const getBlocksList = async (
