@@ -1,7 +1,7 @@
 import * as RPC from "./rpc";
 import { KeysOfUnion } from "./util";
 
-export type Account = {
+export type AccountOld = {
   accountId: string;
   created?: {
     hash: string;
@@ -17,6 +17,19 @@ export type Account = {
     nonStakedBalance: string;
     lockupAccountId?: string;
   } | null;
+};
+
+export type Account = {
+  id: string;
+  isContract: boolean;
+  created?: {
+    timestamp: number;
+    hash: string;
+  };
+  storageUsed: number;
+  nonStakedBalance: string;
+  stakedBalance: string;
+  transactionsQuantity: number;
 };
 
 export type AccountTransactionsCount = {
@@ -218,9 +231,13 @@ export type DeployInfo = {
 };
 
 export type ProcedureTypes = {
-  "account-info": {
+  account: {
     args: [string];
     result: Account | null;
+  };
+  "account-info": {
+    args: [string];
+    result: AccountOld | null;
   };
   "account-transactions-count": {
     args: [string];
