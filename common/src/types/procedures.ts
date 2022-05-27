@@ -275,7 +275,7 @@ export type TransactionDetails = {
   gasUsed: string;
   gasAttached: string;
   receipt: TransactionReceipt;
-  refundReceipts: RefundReceipt[];
+  refundReceipts: TransactionReceipt[];
 };
 
 export type TransactionBlockInfo = {
@@ -371,8 +371,6 @@ export type TransactionReceipt = {
   status: RPC.ExecutionStatusView;
   outgoingReceipts: TransactionReceipt[] | [];
 };
-
-export type RefundReceipt = TransactionReceipt & { refund: string };
 
 type ReceiptExecutionOutcome = {
   tokens_burnt: string;

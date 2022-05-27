@@ -6,7 +6,6 @@ import {
   RPC,
   TransactionDetails,
   TransactionReceipt,
-  RefundReceipt,
   ReceiptsOutcome,
   TransactionOutcome,
 } from "../types";
@@ -227,28 +226,7 @@ export const getTransactionDetails = async (
     },
     new Map()
   );
-  const receiptsMap: Map<string, TransactionReceipt> = new Map();
-  const receiptsToValues = collectReceiptsWithOutcome(
-    receiptsOutcome[0].id,
-    null,
-    receiptsMap,
-    receiptsByIdMap,
-    receiptOutcomesByIdMap
-  );
-  const refundReceiptsMap = receiptsToValues.reduce(
-    (acc: Map<string, RefundReceipt>, receipt) => {
-      const parentReceipt =
-        receipt.parentReceiptHash && receiptsMap.has(receipt.parentReceiptHash);
-      if (receipt.signerId === "system" && parentReceipt) {
-        acc.set(receipt.receiptId, {
-          ...receipt,
-          refund: getDeposit(receipt.actions),
-        });
-      }
-      return acc;
-    },
-    new Map()
-  );
+  const refundReceiptsMap: Map<string, any> = new Map();
 
   const gasUsed = getGasUsed(
     transactionInfo.transaction_outcome,
@@ -276,8 +254,12 @@ export const getTransactionDetails = async (
     status: Object.keys(transactionInfo.status)[0] as any, // need to resolve
     gasUsed,
     gasAttached,
-    receipts: [...receiptsMap.values()].filter(
-      (receipt) => !refundReceiptsMap.has(receipt.receiptId)
+    receipt: collectReceiptsWithOutcome(
+      receiptsOutcome[0].id,
+      null,
+      refundReceiptsMap,
+      receiptsByIdMap,
+      receiptOutcomesByIdMap
     ),
     refundReceipts: [...refundReceiptsMap.values()],
   };
@@ -396,17 +378,17 @@ export const collectNestedReceiptWithOutcome = (
 const collectReceiptsWithOutcome = (
   receiptHash: string,
   parentReceiptHash: string | null = null,
-  receiptsMap: Map<string, TransactionReceipt>,
+  refundReceiptsMap: Map<string, TransactionReceipt>,
   receiptsByIdMap: Map<
     string,
     Omit<RPC.ReceiptView, "actions"> & { actions: Action[] }
   >,
   receiptOutcomesByIdMap: Map<string, ReceiptsOutcome>
-): TransactionReceipt[] => {
+): TransactionReceipt => {
   const receipt = receiptsByIdMap.get(receiptHash)!;
   const receiptOutcome = receiptOutcomesByIdMap.get(receiptHash)!;
 
-  receiptsMap.set(receiptHash, {
+  return {
     actions: receipt.actions,
     deposit: getDeposit(receipt.actions ?? []) || null,
     signerId: receipt.predecessor_id, // do we need to rename 'signerId' to 'predecessor_id'?
@@ -418,19 +400,33 @@ const collectReceiptsWithOutcome = (
     tokensBurnt: receiptOutcome.outcome.tokens_burnt,
     logs: receiptOutcome.outcome.logs || [],
     status: receiptOutcome.outcome.status,
-  });
-
-  receiptOutcome.outcome.receipt_ids.forEach((executedReceipt: string) =>
-    collectReceiptsWithOutcome(
-      executedReceipt,
-      receiptHash,
-      receiptsMap,
-      receiptsByIdMap,
-      receiptOutcomesByIdMap
-    )
-  );
-
-  return [...receiptsMap.values()];
+    outgoingReceipts: receiptOutcome.outcome.receipt_ids
+      .map((outcomeReceiptHash) => {
+        const outcomeReceipt = receiptsByIdMap.get(outcomeReceiptHash);
+        if (outcomeReceipt && outcomeReceipt.predecessor_id === "system") {
+          refundReceiptsMap.set(
+            outcomeReceiptHash,
+            collectReceiptsWithOutcome(
+              outcomeReceiptHash,
+              receiptOutcome.id,
+              refundReceiptsMap,
+              receiptsByIdMap,
+              receiptOutcomesByIdMap
+            )
+          );
+          return null;
+        } else {
+          return collectReceiptsWithOutcome(
+            outcomeReceiptHash,
+            receiptOutcome.id,
+            refundReceiptsMap,
+            receiptsByIdMap,
+            receiptOutcomesByIdMap
+          );
+        }
+      })
+      .filter((i) => i !== null) as any,
+  };
 };
 
 export const getDeposit = (actions: Action[]) =>
