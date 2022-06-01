@@ -1059,6 +1059,32 @@ export const queryGasUsedInChunks = async (blockHash: string) => {
     .executeTakeFirst();
 };
 
+// FTs
+export const queryFungibleTokensAmount = async () => {
+  const selection = await indexerDatabase
+    .selectFrom("assets__fungible_token_events")
+    // TODO: Research if we can get rid of distinct without performance degradation
+    .select(
+      sql<string>`count(distinct emitted_by_contract_account_id)`.as("amount")
+    )
+    .executeTakeFirstOrThrow();
+  return parseInt(selection.amount);
+};
+
+export const queryFungibleTokens = async (limit: number, cursor: number = 0) => {
+  return (
+    indexerDatabase
+      .selectFrom("assets__fungible_token_events")
+      // TODO: Research if we can get rid of distinct without performance degradation
+      .select("emitted_by_contract_account_id as id")
+      .distinctOn("emitted_by_contract_account_id")
+      .orderBy("id", "desc")
+      .limit(limit)
+      .offset(offset)
+      .execute()
+  );
+};
+
 export const maybeCreateTelemetryTable = async () => {
   if (!telemetryWriteDatabase) {
     return;
