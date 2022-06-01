@@ -102,6 +102,16 @@ export const queryOnlineNodesCount = async () => {
   return parseInt(selection.onlineNodesCount);
 };
 
+export const queryLatestBlockTimestamp = async () => {
+  const latestBlockHeightSelection = await indexerDatabase
+    .selectFrom("blocks")
+    .select((eb) => div(eb, "block_timestamp", 1000 * 1000, "timestampMs"))
+    .orderBy("block_timestamp", "desc")
+    .limit(1)
+    .executeTakeFirstOrThrow();
+  return Number(latestBlockHeightSelection.timestampMs);
+};
+
 export const queryLatestBlockHeight = async () => {
   const latestBlockHeightSelection = await indexerDatabase
     .selectFrom("blocks")
@@ -1140,4 +1150,13 @@ export const maybeSendTelemetry = async (
   const compiled = query.compile();
   // TODO: figure out why raw query run faster than kysely query
   await extraPool.query(compiled.sql, compiled.parameters as any);
+};
+
+export const healthCheck = async () => {
+  try {
+    await sql`select 1`.execute(indexerDatabase);
+    return true;
+  } catch {
+    return false;
+  }
 };

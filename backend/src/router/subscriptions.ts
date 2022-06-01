@@ -83,4 +83,16 @@ export const router = trpc
   })
   .subscription("network-stats", {
     resolve: getSubscriptionResolve("network-stats"),
+  })
+  .query("rpc-status", {
+    resolve: getQueryResolve("rpc-status"),
+  })
+  .subscription("rpc-status", {
+    resolve: getSubscriptionResolve("rpc-status"),
+  })
+  .query("indexer-status", {
+    resolve: getQueryResolve("indexer-status"),
+  })
+  .subscription("indexer-status", {
+    resolve: getSubscriptionResolve("indexer-status"),
   });
