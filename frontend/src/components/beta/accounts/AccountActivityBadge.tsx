@@ -5,6 +5,7 @@ import { AccountActivityAction } from "../../../types/common";
 
 type Props = {
   action: AccountActivityAction;
+  href?: string;
 };
 
 const Wrapper = styled("div", {
@@ -17,6 +18,12 @@ const Wrapper = styled("div", {
   fontSize: 12,
 
   variants: {
+    as: {
+      a: {
+        cursor: "pointer",
+      },
+    },
+
     type: {
       transfer: {
         backgroundColor: "#F0FFEE",
@@ -51,14 +58,17 @@ const Wrapper = styled("div", {
       batch: {
         backgroundColor: "#E9E8E8",
       },
+      "gas-reward": {
+        backgroundColor: "#E1F8E8",
+      },
     },
   },
 });
 
-const AccountActivityBadge: React.FC<Props> = React.memo(({ action }) => {
+const AccountActivityBadge: React.FC<Props> = React.memo(({ action, href }) => {
   const { t } = useTranslation();
   return (
-    <Wrapper type={action.type}>
+    <Wrapper type={action.type} as={href ? "a" : undefined} href={href}>
       {action.type === "call-method"
         ? action.methodName
         : t(`pages.account.activity.type.${action.type}`, {

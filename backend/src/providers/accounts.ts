@@ -197,16 +197,33 @@ export const getIdsFromAccountChanges = (
   );
 };
 
-export type AccountTransferAction = {
-  type: "transfer";
+export type ActivityConnectionActions = {
+  parentAction?: AccountActivityAction &
+    ActivityConnection &
+    ActivityConnectionAccounts;
+  childrenActions?: (AccountActivityAction &
+    ActivityConnection &
+    ActivityConnectionAccounts)[];
+};
+
+export type ActivityConnectionAccounts = {
+  sender: string;
+  receiver: string;
+};
+
+export type ActivityConnection = {
   transactionHash: string;
   receiptId?: string;
 };
 
+export type AccountTransferAction = {
+  type: "transfer";
+  deltaAmount: string;
+};
+
 export type AccountRefundAction = {
   type: "refund";
-  transactionHash: string;
-  receiptId?: string;
+  deltaAmount: string;
 };
 
 export type AccountValidatorRewardAction = {
@@ -216,52 +233,43 @@ export type AccountValidatorRewardAction = {
 
 export type AccountContractDeployedAction = {
   type: "contract-deployed";
-  transactionHash: string;
-  receiptId?: string;
 };
 
 export type AccountAccessKeyCreatedAction = {
   type: "access-key-created";
-  transactionHash: string;
-  receiptId?: string;
 };
 
 export type AccountAccessKeyRemovedAction = {
   type: "access-key-removed";
-  transactionHash: string;
-  receiptId?: string;
 };
 
 export type AccountCallMethodAction = {
   type: "call-method";
   methodName: string;
-  transactionHash: string;
-  receiptId?: string;
+  attachedAmount: string;
 };
 
 export type AccountRestakeAction = {
   type: "restake";
-  transactionHash: string;
-  receiptId?: string;
+  deltaAmount: string;
 };
 
 export type AccountAccountCreatedAction = {
   type: "account-created";
-  transactionHash: string;
-  receiptId?: string;
 };
 
 export type AccountAccountRemovedAction = {
   type: "account-removed";
-  transactionHash: string;
-  receiptId?: string;
+};
+
+export type GasRewardAction = {
+  type: "gas-reward";
+  amount: string;
 };
 
 export type AccountBatchAction = {
   type: "batch";
   actions: AccountActivityAction[];
-  transactionHash: string;
-  receiptId?: string;
 };
 
 export type AccountActivityAction =
@@ -275,7 +283,8 @@ export type AccountActivityAction =
   | AccountRestakeAction
   | AccountAccountCreatedAction
   | AccountAccountRemovedAction
-  | AccountBatchAction;
+  | AccountBatchAction
+  | GasRewardAction;
 
 export type AccountActivityElement = {
   involvedAccountId: string | null;
@@ -287,16 +296,14 @@ export type AccountActivityElement = {
   timestamp: number;
   direction: "inbound" | "outbound";
   deltaAmount: string;
-  action: AccountActivityAction;
+  action: AccountActivityAction &
+    ActivityConnectionActions &
+    ActivityConnection;
 };
 
 const getActivityAction = (
   actions: transactions.Action[],
-  {
-    transactionHash,
-    receiptId,
-  }: { transactionHash: string; receiptId?: string },
-  isRefund: boolean
+  isRefund?: boolean
 ): AccountActivityAction => {
   if (actions.length === 0) {
     throw new Error("Unexpected zero-length array of actions");
@@ -304,98 +311,167 @@ const getActivityAction = (
   if (actions.length !== 1) {
     return {
       type: "batch",
-      transactionHash,
-      actions: actions.map((action) =>
-        getActivityAction([action], { transactionHash, receiptId }, isRefund)
-      ),
+      actions: actions.map((action) => getActivityAction([action], isRefund)),
     };
   }
   switch (actions[0].kind) {
     case "AddKey":
       return {
         type: "access-key-created",
-        transactionHash,
-        receiptId,
       };
     case "CreateAccount":
       return {
         type: "account-created",
-        transactionHash,
-        receiptId,
       };
     case "DeleteAccount":
       return {
         type: "account-removed",
-        transactionHash,
-        receiptId,
       };
     case "DeleteKey":
       return {
         type: "access-key-removed",
-        transactionHash,
-        receiptId,
       };
     case "DeployContract":
       return {
         type: "contract-deployed",
-        transactionHash,
-        receiptId,
       };
     case "FunctionCall":
       return {
         type: "call-method",
-        transactionHash,
-        receiptId,
         methodName: actions[0].args.method_name,
+        attachedAmount: actions[0].args.deposit,
       };
     case "Stake":
       return {
         type: "restake",
-        transactionHash,
-        receiptId,
+        deltaAmount: actions[0].args.stake,
       };
     case "Transfer":
       return {
         type: isRefund ? "refund" : "transfer",
-        transactionHash,
-        receiptId,
+        deltaAmount: actions[0].args.deposit,
       };
   }
+};
+
+const withActivityConnection = <T>(
+  input: T,
+  source?: receipts.Receipt | transactions.TransactionBaseInfo
+): T & ActivityConnection => {
+  if (!source) {
+    return {
+      ...input,
+      transactionHash: "",
+    };
+  }
+  if ("receiptId" in source) {
+    return {
+      ...input,
+      transactionHash: source.originatedFromTransactionHash,
+      receiptId: source.receiptId,
+    };
+  }
+  return {
+    ...input,
+    transactionHash: source.hash,
+  };
+};
+
+const withConnections = <T>(
+  input: T,
+  source: receipts.Receipt | transactions.TransactionBaseInfo
+): T & ActivityConnectionAccounts => {
+  return {
+    ...input,
+    sender: source.signerId,
+    receiver: source.receiverId,
+  };
 };
 
 export const getAccountActivityAction = (
   change: Awaited<ReturnType<typeof queryBalanceChanges>>[number],
   receiptsMapping: Map<string, receipts.Receipt>,
   transactionsMapping: Map<string, transactions.TransactionBaseInfo>,
-  blockHeightsMapping: Map<string, { hash: string }>
-): AccountActivityAction => {
+  blockHeightsMapping: Map<string, { hash: string }>,
+  receiptRelations: Map<
+    string,
+    { parentReceiptId: string | null; childrenReceiptIds: string[] }
+  >
+): AccountActivityElement["action"] => {
   switch (change.cause) {
-    case "CONTRACT_REWARD":
-    case "RECEIPT":
+    case "CONTRACT_REWARD": {
       const connectedReceipt = receiptsMapping.get(change.receiptId!)!;
-      return getActivityAction(
-        connectedReceipt.actions,
+      return withActivityConnection(
         {
-          receiptId: connectedReceipt.receiptId,
-          transactionHash: connectedReceipt.originatedFromTransactionHash,
+          type: "gas-reward",
+          amount: change.deltaStakedAmount,
         },
-        !change.involvedAccountId
+        connectedReceipt
       );
+    }
+    case "RECEIPT": {
+      const connectedReceipt = receiptsMapping.get(change.receiptId!)!;
+      const relation = receiptRelations.get(change.receiptId!)!;
+      const parentReceipt = relation.parentReceiptId
+        ? receiptsMapping.get(relation.parentReceiptId)!
+        : undefined;
+      const childrenReceipts = relation.childrenReceiptIds.map(
+        (childrenReceiptId) => receiptsMapping.get(childrenReceiptId)!
+      );
+      return withActivityConnection(
+        {
+          ...getActivityAction(
+            connectedReceipt.actions,
+            !change.involvedAccountId
+          ),
+          parentAction: parentReceipt
+            ? withConnections(
+                withActivityConnection(
+                  getActivityAction(
+                    parentReceipt.actions,
+                    parentReceipt.signerId === "system"
+                  ),
+                  parentReceipt
+                ),
+                parentReceipt
+              )
+            : undefined,
+          childrenActions: childrenReceipts.map((receipt) =>
+            withConnections(
+              withActivityConnection(
+                getActivityAction(
+                  receipt.actions,
+                  receipt.signerId === "system"
+                ),
+                receipt
+              ),
+              receipt
+            )
+          ),
+        },
+        connectedReceipt
+      );
+    }
     case "TRANSACTION": {
       const connectedTransaction = transactionsMapping.get(
         change.transactionHash!
       )!;
-      return getActivityAction(
-        connectedTransaction.actions,
-        { transactionHash: connectedTransaction.hash },
-        !change.involvedAccountId
+      return withActivityConnection(
+        {
+          ...getActivityAction(
+            connectedTransaction.actions,
+            !change.involvedAccountId
+          ),
+          childrenActions: [],
+        },
+        connectedTransaction
       );
     }
     case "VALIDATORS_REWARD":
       const connectedBlock = blockHeightsMapping.get(change.blockTimestamp!)!;
-      return {
+      return withActivityConnection({
         type: "validator-reward",
         blockHash: connectedBlock.hash,
-      };
+      });
   }
 };

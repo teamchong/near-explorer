@@ -32,7 +32,7 @@ const AccountPage: NextPage = React.memo(() => {
         <title>NEAR Explorer Beta | Account</title>
       </Head>
       <link
-        href="https://fonts.googleapis.com/css2?family=Manrope&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;500;700&display=swap"
         rel="stylesheet"
       />
       <Wrapper>

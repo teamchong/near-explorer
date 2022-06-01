@@ -4,6 +4,7 @@ import {
   queryIncludedReceiptsList,
   queryExecutedReceiptsList,
   queryReceiptsByIds,
+  queryRelatedReceiptsIds,
 } from "../database/queries";
 
 import {
@@ -108,12 +109,85 @@ export const getReceiptsByIds = async (
   if (ids.length === 0) {
     return new Map();
   }
-  const receiptActions = await queryReceiptsByIds(ids);
-  const receipts = groupReceiptActionsIntoReceipts(receiptActions);
+  const receiptRows = await queryReceiptsByIds(ids);
+  const receipts = groupReceiptActionsIntoReceipts(receiptRows);
   return receipts.reduce<Map<string, Receipt>>((acc, receipt) => {
     acc.set(receipt.receiptId, receipt);
     return acc;
   }, new Map());
+};
+
+export const getRelatedReceiptsByIds = async (
+  prevReceiptsMapping: Map<string, Receipt>
+): Promise<{
+  receiptsMapping: Map<string, Receipt>;
+  relations: Map<
+    string,
+    { parentReceiptId: string | null; childrenReceiptIds: string[] }
+  >;
+}> => {
+  const ids = [...prevReceiptsMapping.keys()];
+  if (ids.length === 0) {
+    return {
+      receiptsMapping: prevReceiptsMapping,
+      relations: new Map(),
+    };
+  }
+  const relatedResult = await queryRelatedReceiptsIds(ids);
+  const relations = ids.reduce<
+    Map<
+      string,
+      { parentReceiptId: string | null; childrenReceiptIds: string[] }
+    >
+  >((acc, id) => {
+    let relatedIds: {
+      parentReceiptId: string | null;
+      childrenReceiptIds: string[];
+    } = {
+      parentReceiptId: null,
+      childrenReceiptIds: [],
+    };
+    const parentRow = relatedResult.find((row) => row.producedReceiptId === id);
+    if (parentRow) {
+      relatedIds.parentReceiptId = parentRow.executedReceiptId;
+    }
+    const childrenRows = relatedResult.filter(
+      (row) => row.executedReceiptId === id
+    );
+    if (childrenRows.length !== 0) {
+      relatedIds.childrenReceiptIds = childrenRows.map(
+        (row) => row.producedReceiptId
+      );
+    }
+    acc.set(id, relatedIds);
+    return acc;
+  }, new Map());
+  const prevReceiptIds = [...prevReceiptsMapping.keys()];
+  const lookupIds = [...relations.values()].reduce<Set<string>>(
+    (acc, relation) => {
+      if (
+        relation.parentReceiptId &&
+        !prevReceiptIds.includes(relation.parentReceiptId)
+      ) {
+        acc.add(relation.parentReceiptId);
+      }
+      const filteredChildrenIds = relation.childrenReceiptIds.filter(
+        (id) => !prevReceiptIds.includes(id)
+      );
+      filteredChildrenIds.forEach((id) => acc.add(id));
+      return acc;
+    },
+    new Set()
+  );
+  const receiptRows = await queryReceiptsByIds([...lookupIds]);
+  const receipts = groupReceiptActionsIntoReceipts(receiptRows);
+  return {
+    receiptsMapping: receipts.reduce<Map<string, Receipt>>((acc, receipt) => {
+      acc.set(receipt.receiptId, receipt);
+      return acc;
+    }, new Map(prevReceiptsMapping)),
+    relations,
+  };
 };
 
 export const getReceiptsCountInBlock = async (

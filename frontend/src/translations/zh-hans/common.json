@@ -143,7 +143,8 @@
           "account-removed": "Account removed",
           "batch": "Batch (${quantity})",
           "refund": "Refund",
-          "validator-reward": "Validator reward"
+          "validator-reward": "Validator reward",
+          "gas-reward": "Gas reward"
         },
         "dateFormat": "DD/MM/YYYY h:mm A"
       }

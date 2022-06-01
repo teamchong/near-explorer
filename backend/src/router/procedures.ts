@@ -331,6 +331,10 @@ export const router = trpc
         transactions.getTransactionsByHashes(idsToFetch.transactionHashes),
         blocks.getBlockHeightsByTimestamps(idsToFetch.blocksTimestamps),
       ]);
+      const {
+        receiptsMapping: receiptsMappingWithRelated,
+        relations: receiptRelations,
+      } = await receipts.getRelatedReceiptsByIds(receiptsMapping);
       return changes.map((change) => ({
         timestamp: nanosecondsToMilliseconds(BigInt(change.blockTimestamp)),
         involvedAccountId: change.involvedAccountId,
@@ -338,9 +342,10 @@ export const router = trpc
         deltaAmount: change.deltaNonStakedAmount,
         action: accounts.getAccountActivityAction(
           change,
-          receiptsMapping,
+          receiptsMappingWithRelated,
           transactionsMapping,
-          blocksMapping
+          blocksMapping,
+          receiptRelations
         ),
         cursor: {
           blockTimestamp: change.blockTimestamp,

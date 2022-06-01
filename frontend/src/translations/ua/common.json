@@ -143,7 +143,8 @@
           "account-removed": "Видалення акаунта",
           "batch": "Пакет (${quantity})",
           "refund": "Решта",
-          "validator-reward": "Нагорода валідатора"
+          "validator-reward": "Нагорода валідатора",
+          "gas-reward": "Нагорода контракту"
         },
         "dateFormat": "DD/MM/YYYY hh:mm"
       }

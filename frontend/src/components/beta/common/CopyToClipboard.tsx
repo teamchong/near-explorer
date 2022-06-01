@@ -1,5 +1,4 @@
 import * as React from "react";
-import { CSS } from "@stitches/react";
 import { CopyToClipboard as RawCopyToClipboard } from "react-copy-to-clipboard";
 import { styled } from "../../../libraries/styles";
 
@@ -11,7 +10,6 @@ const Wrapper = styled("div", {
 type Props = {
   text: string;
   onCopy?: (text: string, result: boolean) => void;
-  css?: CSS;
 };
 
 const SHOW_COPY_OK_TIME = 2000;
@@ -36,12 +34,8 @@ const CopyToClipboard: React.FC<Props> = React.memo((props) => {
       return () => void window.clearTimeout(timeoutId);
     }
   }, [copied]);
-  const LocalWrapper = React.useMemo(
-    () => (props.css ? styled(Wrapper, props.css) : Wrapper),
-    [props.css]
-  );
   return (
-    <LocalWrapper>
+    <Wrapper>
       <RawCopyToClipboard text={props.text} onCopy={onCopy}>
         {copied ? (
           <svg height=".6em" width=".6em" viewBox="0 0 16 16">
@@ -63,7 +57,7 @@ const CopyToClipboard: React.FC<Props> = React.memo((props) => {
           </svg>
         )}
       </RawCopyToClipboard>
-    </LocalWrapper>
+    </Wrapper>
   );
 });
 

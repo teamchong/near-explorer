@@ -4,7 +4,14 @@ export type AccountOld = NonNullable<TRPCQueryOutput<"account-info">>;
 export type Account = NonNullable<TRPCQueryOutput<"account">>;
 export type AccountListInfo = TRPCQueryOutput<"accounts-list">[number];
 export type AccountActivityElement = TRPCQueryOutput<"account-activity">[number];
-export type AccountActivityAction = AccountActivityElement["action"];
+export type AccountActivityElementAction = AccountActivityElement["action"];
+export type AccountActivityRelatedAction = NonNullable<
+  AccountActivityElement["action"]["parentAction"]
+>;
+type InferAccountActivityAction<
+  T extends AccountActivityElementAction
+> = T extends { type: "batch" } ? T["actions"][number] : never;
+export type AccountActivityAction = InferAccountActivityAction<AccountActivityElementAction>;
 
 export type Block = NonNullable<TRPCQueryOutput<"block-info">>;
 export type BlockBase = TRPCQueryOutput<"blocks-list">[number];

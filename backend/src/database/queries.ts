@@ -1063,6 +1063,18 @@ export const queryReceiptsByIds = async (ids: string[]) => {
     .execute();
 };
 
+export const queryRelatedReceiptsIds = async (ids: string[]) => {
+  return indexerDatabase
+    .selectFrom("execution_outcome_receipts")
+    .select([
+      "executed_receipt_id as executedReceiptId",
+      "produced_receipt_id as producedReceiptId",
+    ])
+    .where("executed_receipt_id", "in", ids)
+    .orWhere("produced_receipt_id", "in", ids)
+    .execute();
+};
+
 export const queryContractInfo = async (accountId: string) => {
   // find the latest update in analytics db
   const latestUpdateResult = await analyticsDatabase
