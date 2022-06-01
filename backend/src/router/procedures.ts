@@ -13,6 +13,7 @@ import * as blocks from "../providers/blocks";
 import * as chunks from "../providers/chunks";
 import * as accounts from "../providers/accounts";
 import * as telemetry from "../providers/telemetry";
+import * as fungibleTokens from "../providers/fungible-tokens";
 
 import * as nearApi from "../utils/near";
 import { Context } from "../context";
@@ -265,6 +266,16 @@ export const router = trpc
         ...accountInfo,
         details: accountDetails,
       };
+    },
+  })
+  .query("account-fungible-tokens", {
+    input: z.strictObject({
+      accountId: validators.accountId,
+      limit: validators.limit,
+      cursor: z.number().optional(),
+    }),
+    resolve: async ({ input: { accountId, limit, cursor } }) => {
+      return fungibleTokens.getFungibleTokens(accountId, limit, cursor);
     },
   })
   .query("account", {

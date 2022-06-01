@@ -470,6 +470,24 @@ export const queryAccountsList = async (
   return selection.orderBy("account_index", "desc").limit(limit).execute();
 };
 
+export const queryAccountFungibleTokenContractIds = async (
+  accountId: string,
+  limit: number,
+  cursor: number = 0
+): Promise<string[]> => {
+  const selection = await indexerDatabase
+    .selectFrom("assets__fungible_token_events")
+    .select("emitted_by_contract_account_id as contractId")
+    .distinctOn("emitted_by_contract_account_id")
+    .where("token_new_owner_account_id", "=", accountId)
+    .orWhere("token_old_owner_account_id", "=", accountId)
+    .orderBy("emitted_by_contract_account_id", "desc")
+    .limit(limit)
+    .offset(cursor)
+    .execute();
+  return selection.map((row) => row.contractId);
+};
+
 export const queryOutcomeTransactionsCountFromAnalytics = async (
   accountId: string
 ) => {

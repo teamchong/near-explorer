@@ -2,12 +2,17 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { styled } from "../../../libraries/styles";
 import { Tabs } from "../common/Tabs";
+import AccountFungibleTokens from "./AccountFungibleTokens";
 
 const TabLabel = styled("div", {
   display: "flex",
 });
 
-const AccountTabs: React.FC = React.memo(() => {
+type Props = {
+  accountId: string;
+};
+
+const AccountTabs: React.FC<Props> = React.memo(({ accountId }) => {
   const { t } = useTranslation();
   return (
     <Tabs
@@ -20,9 +25,9 @@ const AccountTabs: React.FC = React.memo(() => {
         },
         {
           id: "tokens",
-          disabled: true,
+          disabled: false,
           label: <TabLabel>{t("pages.account.tabs.tokens")}</TabLabel>,
-          node: null,
+          node: <AccountFungibleTokens accountId={accountId} />,
         },
         {
           id: "collectibles",
