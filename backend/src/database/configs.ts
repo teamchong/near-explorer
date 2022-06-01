@@ -2,6 +2,7 @@ import { PostgresDialectConfig } from "kysely";
 
 type DatabaseName =
   | "readOnlyIndexerDatabase"
+  | "readOnlyIndexerDatabaseBeta"
   | "readOnlyAnalyticsDatabase"
   | "readOnlyTelemetryDatabase"
   | "writeOnlyTelemetryDatabase";
@@ -12,6 +13,12 @@ export const databaseConfigs: Record<DatabaseName, PostgresDialectConfig> = {
     database: process.env.NEAR_READ_ONLY_INDEXER_DATABASE_NAME,
     user: process.env.NEAR_READ_ONLY_INDEXER_DATABASE_USERNAME,
     password: process.env.NEAR_READ_ONLY_INDEXER_DATABASE_PASSWORD,
+  },
+  readOnlyIndexerDatabaseBeta: {
+    host: process.env.NEAR_READ_ONLY_INDEXER_BETA_DATABASE_HOST,
+    database: process.env.NEAR_READ_ONLY_INDEXER_BETA_DATABASE_NAME,
+    user: process.env.NEAR_READ_ONLY_INDEXER_BETA_DATABASE_USERNAME,
+    password: process.env.NEAR_READ_ONLY_INDEXER_BETA_DATABASE_PASSWORD,
   },
   readOnlyAnalyticsDatabase: {
     host: process.env.NEAR_READ_ONLY_ANALYTICS_DATABASE_HOST,
